@@ -22,6 +22,7 @@ from pathlib import Path
 from plyfile import PlyData, PlyElement
 from utils.sh_utils import SH2RGB
 from scene.gaussian_model import BasicPointCloud
+import open3d as o3d
 
 class CameraInfo(NamedTuple):
     uid: int
@@ -38,7 +39,7 @@ class CameraInfo(NamedTuple):
     is_test: bool
 
 class SceneInfo(NamedTuple):
-    point_cloud: BasicPointCloud
+    point_cloud: o3d.geometry.PointCloud
     train_cameras: list
     test_cameras: list
     nerf_normalization: dict
@@ -213,7 +214,7 @@ def readColmapSceneInfo(path, images, depths, eval, train_test_exp, llffhold=8):
             xyz, rgb, _ = read_points3D_text(txt_path)
         storePly(ply_path, xyz, rgb)
     try:
-        pcd = fetchPly(ply_path)
+        pcd = o3d.io.read_point_cloud(ply_path)
     except:
         pcd = None
 
