@@ -489,8 +489,8 @@ class VoxelModel:
     def densify_and_create_new_primitives(self, grads, grad_threshold, scene_extent, N=8):
         # Extract points that satisfy the gradient condition
         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
-        # selected_pts_mask = torch.logical_and(selected_pts_mask,
-        #                                       torch.max(self.get_scaling, dim=1).values <= self.percent_dense*scene_extent)
+        selected_pts_mask = torch.logical_and(selected_pts_mask,
+                                              torch.max(self.get_scaling, dim=1).values > self.percent_dense*scene_extent)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(torch.abs(self._xyz_disp)) >= self.voxel_size / 2)
         
