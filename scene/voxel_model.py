@@ -474,8 +474,9 @@ class VoxelModel:
         prune_mask = (self.get_opacity < min_opacity).squeeze()
         if max_screen_size:
             big_points_vs = self.max_radii2D > max_screen_size
-            big_points_ws = self.get_scaling.max(dim=1).values > 0.1 * extent
+            big_points_ws = self.get_scaling.max(dim=1).values > extent
             prune_mask = torch.logical_or(torch.logical_or(prune_mask, big_points_vs), big_points_ws)
+
         self.prune_points(prune_mask)
         tmp_radii = self.tmp_radii
         self.tmp_radii = None
@@ -489,13 +490,13 @@ class VoxelModel:
     def densify_and_create_new_primitives(self, grads, grad_threshold, scene_extent, N=8):
         # Extract points that satisfy the gradient condition
         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
-        selected_pts_mask = torch.logical_and(selected_pts_mask,
+        cond_pts_mask = torch.logical_or(torch.max(torch.abs(torch.tanh(self._xyz_disp) * self.voxel_size)) >= self.voxel_size / 3,
                                               torch.max(self.get_scaling, dim=1).values > self.percent_dense*scene_extent)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
-                                              torch.max(torch.abs(self._xyz_disp)) >= self.voxel_size / 2)
-        
-        abs_disp = torch.abs(self._xyz_disp)
-        exceeds_voxel_size = abs_disp >= (self.voxel_size / 2)
+                                              cond_pts_mask)
+
+        abs_disp = torch.abs(torch.tanh(self._xyz_disp) * self.voxel_size)
+        exceeds_voxel_size = abs_disp >= (self.voxel_size / 3)
         new_xyz = self._xyz[selected_pts_mask]
         unit_displacement = torch.sign(self._xyz_disp[selected_pts_mask]) * exceeds_voxel_size[selected_pts_mask].float()
         new_xyz = new_xyz + unit_displacement * self.voxel_size

@@ -280,6 +280,7 @@ if __name__ == "__main__":
     
     print("Optimizing " + args.model_path)
 
+
     # Initialize system state (RNG)
     safe_state(args.quiet)
 
